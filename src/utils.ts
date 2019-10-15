@@ -68,3 +68,7 @@ export function isStringNotNullEmptyOrUndefined(str: string) {
     const isReducableType = typeof str === "string" || typeof str === "number" || typeof str === "boolean";
     return str && isReducableType;
 }
+
+export function encodeLinearGradientUrl(url: string): string {
+    return encodeURI(url).replace(/[^a-z0-9\-_:\.]|^[^a-z]+/gi, "");
+}

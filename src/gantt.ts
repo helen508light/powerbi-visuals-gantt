@@ -98,7 +98,7 @@ import { createTooltipServiceWrapper, TooltipEventArgs, ITooltipServiceWrapper, 
 import { ColorHelper } from "powerbi-visuals-utils-colorutils";
 
 // powerbi.extensibility.utils.chart.legend
-import { legend as LegendModule, legendInterfaces, OpacityLegendBehavior, axisInterfaces, axisScale, axis as AxisHelper } from "powerbi-visuals-utils-chartutils";
+import { legend as LegendModule, legendInterfaces, OpacityLegendBehavior, axisInterfaces, axisScale, axis as AxisHelper, axis } from "powerbi-visuals-utils-chartutils";
 import ILegend = legendInterfaces.ILegend;
 import LegendPosition = legendInterfaces.LegendPosition;
 import LegendData = legendInterfaces.LegendData;
@@ -132,7 +132,7 @@ import {
 import { DurationHelper } from "./durationHelper";
 import { GanttColumns } from "./columns";
 import { GanttSettings, DateTypeSettings } from "./settings";
-import { drawNotRoundedRectByPath, drawRoundedRectByPath, drawCircle, drawDiamond, drawRectangle, isValidDate, isStringNotNullEmptyOrUndefined } from "./utils";
+import { drawNotRoundedRectByPath, drawRoundedRectByPath, drawCircle, drawDiamond, drawRectangle, isValidDate, isStringNotNullEmptyOrUndefined, encodeLinearGradientUrl } from "./utils";
 import { drawExpandButton, drawCollapseButton, drawMinusButton, drawPlusButton } from "./drawButtons";
 
 const PercentFormat: string = "0.00 %;-0.00 %;0.00 %";
@@ -281,7 +281,7 @@ export class Gantt implements IVisual {
         PlusMinusColor: "#5F6B6D",
         CollapseAllTextColor: "#aaa",
         MilestoneLineColor: "#ccc",
-        TaskCategoryLabelsRectColor: "#fafafa",
+        TaskCategoryLabelsRectColor: "#d3d3d3",
         TaskLineWidth: 15,
         IconMargin: 12,
         IconHeight: 16,
@@ -392,7 +392,6 @@ export class Gantt implements IVisual {
      */
     private createViewport(element: HTMLElement): void {
         let self = this;
-        const isHighContrast: boolean = this.colorHelper.isHighContrast;
         const axisBackgroundColor: string = this.colorHelper.getThemeColor();
         // create div container to the whole viewport area
         this.ganttDiv = this.body.append("div")
@@ -430,7 +429,8 @@ export class Gantt implements IVisual {
             .attr("width", "100%")
             .attr("y", "-20")
             .attr("height", "40px")
-            .attr("fill", axisBackgroundColor);
+            .attr("fill", axisBackgroundColor)
+            .attr("opacity", 0);
 
         // create task lines container
         this.lineGroup = this.ganttSvg
@@ -442,8 +442,9 @@ export class Gantt implements IVisual {
             .classed(Selectors.TaskLinesRect.className, true)
             .attr("height", "100%")
             .attr("width", "0")
-            .attr("fill", axisBackgroundColor)
-            .attr("y", this.margin.top);
+            .attr("fill", Gantt.DefaultValues.TaskCategoryLabelsRectColor)
+            .attr("y", this.margin.top)
+            .attr("opacity", 0.3);
 
         this.lineGroup
             .append("rect")
@@ -1858,7 +1859,7 @@ export class Gantt implements IVisual {
             this.lineGroupWrapper
                 .attr("width", taskLabelsWidth)
                 .attr("fill", isHighContrast ? categoriesAreaBackgroundColor : Gantt.DefaultValues.TaskCategoryLabelsRectColor)
-                .attr("stroke", this.colorHelper.getHighContrastColor("foreground", Gantt.DefaultValues.TaskLineColor))
+                .attr("stroke", this.colorHelper.getHighContrastColor("foreground", Gantt.DefaultValues.CollapseAllColor))
                 .attr("stroke-width", 1);
 
             this.lineGroup
@@ -1974,7 +1975,8 @@ export class Gantt implements IVisual {
                     .append("rect")
                     .attr("width", categoryLabelsWidth)
                     .attr("height", 2 * Gantt.TaskLabelsMarginTop)
-                    .attr("fill", categoriesAreaBackgroundColor);
+                    .attr("fill", categoriesAreaBackgroundColor)
+                    .attr("opacity", 0);
 
                 const expandCollapseButton = this.collapseAllGroup
                     .append("svg")
@@ -2276,8 +2278,10 @@ export class Gantt implements IVisual {
                     index = task.index;
                 }
 
-                const url = `${task.index}-${groupedTaskIndex}-${isStringNotNullEmptyOrUndefined(task.taskType) ? task.taskType.toString() : "taskType"}`;
-                return `url(#task${encodeURI(url).replace(/[^a-z0-9\-_:\.]|^[^a-z]+/gi, "")})`;
+                const url = `task${task.index}-${groupedTaskIndex}-${isStringNotNullEmptyOrUndefined(task.taskType) ? task.taskType.toString() : "taskType"}`;
+                const encodedUrl = encodeLinearGradientUrl(url);
+
+                return `url(#${encodedUrl})`;
             });
 
         if (this.colorHelper.isHighContrast) {
@@ -2502,10 +2506,11 @@ export class Gantt implements IVisual {
                     groupedTaskIndex = 0;
                     index = d.index;
                 }
-                const url = `${d.index}-${groupedTaskIndex}-${isStringNotNullEmptyOrUndefined(d.taskType) ? d.taskType.toString() : "taskType"}`;
+                const url = `task${d.index}-${groupedTaskIndex}-${isStringNotNullEmptyOrUndefined(d.taskType) ? d.taskType.toString() : "taskType"}`;
+                const encodedUrl = encodeLinearGradientUrl(url);
 
                 return [{
-                    key: `task${encodeURI(url).replace(/[^a-z0-9\-_:\.]|^[^a-z]+/gi, "")}`, values: <LinearStop[]>[
+                    key: encodedUrl, values: <LinearStop[]>[
                         { completion: 0, color: d.color },
                         { completion: taskProgressPercentage, color: d.color },
                         { completion: taskProgressPercentage, color: d.color },
