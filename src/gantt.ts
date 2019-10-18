@@ -132,8 +132,18 @@ import {
 import { DurationHelper } from "./durationHelper";
 import { GanttColumns } from "./columns";
 import { GanttSettings, DateTypeSettings } from "./settings";
-import { drawNotRoundedRectByPath, drawRoundedRectByPath, drawCircle, drawDiamond, drawRectangle, isValidDate, isStringNotNullEmptyOrUndefined, encodeLinearGradientUrl } from "./utils";
+import {
+    drawNotRoundedRectByPath,
+    drawRoundedRectByPath,
+    drawCircle,
+    drawDiamond,
+    drawRectangle,
+    isValidDate,
+    isStringNotNullEmptyOrUndefined,
+    hashCode
+} from "./utils";
 import { drawExpandButton, drawCollapseButton, drawMinusButton, drawPlusButton } from "./drawButtons";
+import { settings } from "cluster";
 
 const PercentFormat: string = "0.00 %;-0.00 %;0.00 %";
 const ScrollMargin: number = 100;
@@ -281,7 +291,6 @@ export class Gantt implements IVisual {
         PlusMinusColor: "#5F6B6D",
         CollapseAllTextColor: "#aaa",
         MilestoneLineColor: "#ccc",
-        TaskCategoryLabelsRectColor: "#d3d3d3",
         TaskLineWidth: 15,
         IconMargin: 12,
         IconHeight: 16,
@@ -442,9 +451,8 @@ export class Gantt implements IVisual {
             .classed(Selectors.TaskLinesRect.className, true)
             .attr("height", "100%")
             .attr("width", "0")
-            .attr("fill", Gantt.DefaultValues.TaskCategoryLabelsRectColor)
-            .attr("y", this.margin.top)
-            .attr("opacity", 0.3);
+            .attr("fill", this.viewModel.settings.taskLabels.sidebarColor)
+            .attr("y", this.margin.top);
 
         this.lineGroup
             .append("rect")
@@ -1368,7 +1376,9 @@ export class Gantt implements IVisual {
 
             settings.daysOff.fill = colorHelper.getHighContrastColor("foreground", settings.daysOff.fill);
             settings.taskConfig.fill = colorHelper.getHighContrastColor("foreground", settings.taskConfig.fill);
-            settings.taskLabels.fill = colorHelper.getHighContrastColor("foreground", settings.taskLabels.fill);
+            settings.taskLabels.fontColor = colorHelper.getHighContrastColor("foreground", settings.taskLabels.fontColor);
+            // settings.taskLabels.sidebarColor = colorHelper.getHighContrastColor("foreground", settings.taskLabels.sidebarColor);
+            // settings.taskLabels.sidebarBorderColor = colorHelper.getHighContrastColor("foreground", settings.taskLabels.sidebarBorderColor);
             settings.taskResource.fill = colorHelper.getHighContrastColor("foreground", settings.taskResource.fill);
             settings.legend.labelColor = colorHelper.getHighContrastColor("foreground", settings.legend.labelColor);
         }
@@ -1525,6 +1535,7 @@ export class Gantt implements IVisual {
 
         let tasksAfterGrouping: Task[] = [];
         groupedTasks.forEach((t: GroupedTask) => tasksAfterGrouping = tasksAfterGrouping.concat(t.tasks));
+
         const minDateTask: Task = _.minBy(tasksAfterGrouping, (t) => t && t.start);
         const maxDateTask: Task = _.maxBy(tasksAfterGrouping, (t) => t && t.end);
         this.hasNotNullableDates = !!minDateTask && !!maxDateTask;
@@ -1848,7 +1859,7 @@ export class Gantt implements IVisual {
         let axisLabel: Selection<any>;
         let taskLabelsShow: boolean = this.viewModel.settings.taskLabels.show;
         let displayGridLines: boolean = this.viewModel.settings.general.displayGridLines;
-        let taskLabelsColor: string = this.viewModel.settings.taskLabels.fill;
+        let taskLabelsColor: string = this.viewModel.settings.taskLabels.fontColor;
         let taskLabelsFontSize: number = this.viewModel.settings.taskLabels.fontSize;
         let taskLabelsWidth: number = this.viewModel.settings.taskLabels.width;
         let taskConfigHeight: number = this.viewModel.settings.taskConfig.height || DefaultChartLineHeight;
@@ -1858,7 +1869,7 @@ export class Gantt implements IVisual {
         if (taskLabelsShow) {
             this.lineGroupWrapper
                 .attr("width", taskLabelsWidth)
-                .attr("fill", isHighContrast ? categoriesAreaBackgroundColor : Gantt.DefaultValues.TaskCategoryLabelsRectColor)
+                .attr("fill", isHighContrast ? categoriesAreaBackgroundColor : this.viewModel.settings.taskLabels.sidebarColor)
                 .attr("stroke", this.colorHelper.getHighContrastColor("foreground", Gantt.DefaultValues.CollapseAllColor))
                 .attr("stroke-width", 1);
 
@@ -2278,8 +2289,8 @@ export class Gantt implements IVisual {
                     index = task.index;
                 }
 
-                const url = `task${task.index}-${groupedTaskIndex}-${isStringNotNullEmptyOrUndefined(task.taskType) ? task.taskType.toString() : "taskType"}`;
-                const encodedUrl = encodeLinearGradientUrl(url);
+                const url = `${task.index}-${groupedTaskIndex}-${isStringNotNullEmptyOrUndefined(task.taskType) ? task.taskType.toString() : "taskType"}`;
+                const encodedUrl = `task${hashCode(url)}`;
 
                 return `url(#${encodedUrl})`;
             });
@@ -2506,8 +2517,9 @@ export class Gantt implements IVisual {
                     groupedTaskIndex = 0;
                     index = d.index;
                 }
-                const url = `task${d.index}-${groupedTaskIndex}-${isStringNotNullEmptyOrUndefined(d.taskType) ? d.taskType.toString() : "taskType"}`;
-                const encodedUrl = encodeLinearGradientUrl(url);
+
+                const url = `${d.index}-${groupedTaskIndex}-${isStringNotNullEmptyOrUndefined(d.taskType) ? d.taskType.toString() : "taskType"}`;
+                const encodedUrl = `task${hashCode(url)}`;
 
                 return [{
                     key: encodedUrl, values: <LinearStop[]>[
@@ -2973,6 +2985,7 @@ export class Gantt implements IVisual {
         const instanceEnumeration: VisualObjectInstanceEnumeration =
             GanttSettings.enumerateObjectInstances(settings, options);
 
+        debugger;
         if (options.objectName === Gantt.MilestonesPropertyIdentifier.objectName) {
             this.enumerateMilestones(instanceEnumeration);
         }

@@ -282,7 +282,12 @@
                                 "in": "Milestones"
                             }
                         }
-                    ]
+                    ],
+                    "dataReductionAlgorithm": {
+                        "top": {
+                            "count": 3000
+                        }
+                    }
                 },
                 "values": {
                     "group": {
@@ -303,7 +308,12 @@
                                     "in": "Completion"
                                 }
                             }
-                        ]
+                        ],
+                        "dataReductionAlgorithm": {
+                            "top": {
+                                "count": 3000
+                            }
+                        }
                     }
                 }
             }
@@ -643,8 +653,41 @@
                         "bool": true
                     }
                 },
-                "fill": {
-                    "displayName": "Fill",
+                "sidebarColor": {
+                    "displayName": "Sidebar Color",
+                    "displayNameKey": "Visual_SidebarColor",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "sidebarBorderColor": {
+                    "displayName": "Sidebar Border Color",
+                    "displayNameKey": "Visual_SidebarBorderColor",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "horizontalLinesColor": {
+                    "displayName": "Horizontal lines color",
+                    "displayNameKey": "Visual_Fill",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "fontColor": {
+                    "displayName": "Font Color",
                     "displayNameKey": "Visual_Fill",
                     "type": {
                         "fill": {

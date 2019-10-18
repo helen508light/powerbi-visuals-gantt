@@ -76,9 +76,11 @@ export class LegendSettings {
 
 export class TaskLabelsSettings {
     show: boolean = true;
-    fill: string = "#000000";
+    fontColor: string = "#000000";
     fontSize: number = 9;
     width: number = 110;
+    sidebarColor: string = "#fafafa";
+    sidebarBorderColor: string = "";
 }
 
 export class TaskConfigSettings {
